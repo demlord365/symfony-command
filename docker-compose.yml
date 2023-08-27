@@ -1,0 +1,81 @@
+version: '3.7'
+services:
+    nginx:
+        image: nginx:latest
+        container_name: nginx
+        ports:
+            - "127.0.0.1:80:80"
+            - "127.0.0.1:443:443"
+        volumes:
+            - ./hosts:/etc/nginx/conf.d
+            - ./www:/var/www
+            - ./logs/nginx:/var/log/nginx
+        links:
+            - php
+    php:
+        build: ./images/php
+        links:
+            - mysql
+        volumes:
+            - ./www:/var/www
+    mysql:
+        image: mariadb:latest
+        ports:
+            - "3306:3306"
+        volumes:
+            - ./etc/mysql:/etc/mysql
+            - ./logs/mysql:/var/log/mysql
+            - ./mysql:/var/lib/mysql
+#            - ./mysql-import:/var/lib/mysql-import
+            - ./mysql-import/imported_data.sql:/docker-entrypoint-initdb.d/imported_data.sql
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: test_db
+            MYSQL_USER: user
+            MYSQL_PASSWORD: user
+
+    redis:
+        image: redis:latest
+        ports:
+            - "6379:6379"
+
+    postgres:
+        image: postgres:latest
+        ports:
+            - "5432:5432"
+        volumes:
+            - ./postgres:/var/lib/postgresql/data
+            - ./postgres-import/imported_data.sql:/docker-entrypoint-initdb.d/imported_data.sql
+        environment:
+            POSTGRES_DB: test_db
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+
+    phpmyadmin:
+        image: phpmyadmin:latest
+        links:
+            - mysql
+        ports:
+            - 8081:80
+        environment:
+            PMA_HOST: mysql
+            PMA_PORT: 3306
+            PMA_ARBITRARY: 1
+
+    pgadmin:
+        container_name: pgadmin4_container
+        image: dpage/pgadmin4
+        environment:
+            PGADMIN_DEFAULT_EMAIL: admin@admin.com
+            PGADMIN_DEFAULT_PASSWORD: root
+        ports:
+            - "5050:80"
+
+    redis-commander:
+        container_name: redis-commander
+        hostname: redis-commander
+        image: rediscommander/redis-commander:latest
+        environment:
+            - REDIS_HOSTS=local:redis:6379
+        ports:
+            - "8082:8081"
